@@ -13,6 +13,7 @@ This repository helps importing annotations from a BOOX e-readers into Zotero's 
 - Batch-Imports BOOX highlights directly into Zotero's database
 - Generates accurate EPUB CFIs (Canonical Fragment Identifier) matching Zotero's format exactly
 - Supports highlights with comments
+- Prevents the import of duplicate annotations for easy updates
 - Automatic database backup before import
 
 ## Requirements
@@ -85,4 +86,4 @@ The test suite compares generated CFIs against actual Zotero annotations from Ro
 
 ## Alternative Solutions
 
-Simply convert your epub to PDF and annotate the PDF.
+Convert your epub to PDF and annotate the PDF.
