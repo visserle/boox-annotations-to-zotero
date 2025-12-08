@@ -9,12 +9,11 @@ import logging
 import sys
 from pathlib import Path
 
-from src.config import DB_FILE, ZOTERO_STORAGE_DIR
+from src.config import ZOTERO_DATA_DIR
 from src.log_config import configure_logging
 from src.text_processing import parse_annotation_file, extract_book_identifier
 from src.database import find_epub_in_database
 from src.import_annotations import (
-    find_annotation_file,
     import_annotations_to_database,
     print_import_summary,
 )
@@ -29,17 +28,15 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                              # Auto-detect annotation file
-  %(prog)s annotations.txt              # Import specific file
+  %(prog)s annotations.txt             # Import annotation file
   %(prog)s --debug annotations.txt     # Show debug information
         """,
     )
 
     parser.add_argument(
         "annotation_file",
-        nargs="?",
         type=Path,
-        help="annotation file to import (auto-detected if not provided)",
+        help="annotation file to import",
     )
 
     parser.add_argument(
@@ -49,17 +46,10 @@ Examples:
     )
 
     parser.add_argument(
-        "--db",
+        "--zotero-dir",
         type=Path,
         metavar="PATH",
-        help=f"path to Zotero database (default: {DB_FILE})",
-    )
-
-    parser.add_argument(
-        "--storage",
-        type=Path,
-        metavar="PATH",
-        help=f"path to Zotero storage directory (default: {ZOTERO_STORAGE_DIR})",
+        help=f"path to Zotero data directory (default: {ZOTERO_DATA_DIR})",
     )
 
     return parser.parse_args()
@@ -73,39 +63,27 @@ def main():
     log_level = logging.DEBUG if args.debug else logging.INFO
     configure_logging(stream_level=log_level)
 
-    base_dir = Path(__file__).parent
-    db_path = (
-        args.db
-        if args.db
-        else (DB_FILE if DB_FILE.is_absolute() else base_dir / DB_FILE)
-    )
-    storage_dir = args.storage if args.storage else ZOTERO_STORAGE_DIR
+    # Determine Zotero data directory (=/= storage directory)
+    zotero_dir = args.zotero_dir if args.zotero_dir else ZOTERO_DATA_DIR
+    db_path = zotero_dir / "zotero.sqlite"
+    storage_dir = zotero_dir / "storage"
 
     # Check if database exists
     if not db_path.exists():
         logger.error(f"Database not found: {db_path}")
-        logger.error("Make sure zotero.sqlite exists or specify path with --db")
         sys.exit(1)
 
     # Determine annotation file
-    if args.annotation_file:
-        annotation_path = args.annotation_file
-        if not annotation_path.is_absolute():
-            annotation_path = base_dir / annotation_path
-    else:
-        annotation_path = find_annotation_file(base_dir)
-        if annotation_path is None:
-            logger.error("No annotation file found")
-            logger.error("Provide a file or place *-annotation-*.txt in this directory")
-            sys.exit(1)
-        logger.info(f"Auto-detected: {annotation_path.name}")
+    annotation_path = args.annotation_file
+    if not annotation_path.is_absolute():
+        annotation_path = Path.cwd() / annotation_path
 
     if not annotation_path.exists():
         logger.error(f"File not found: {annotation_path}")
         sys.exit(1)
 
     # Extract book identifier and find EPUB in database
-    book_identifier = extract_book_identifier(annotation_path.name)
+    book_identifier = extract_book_identifier(str(annotation_path))
     logger.debug(f"Searching for book: {book_identifier}")
 
     epub_info = find_epub_in_database(str(db_path), book_identifier)

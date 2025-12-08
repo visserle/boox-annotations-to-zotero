@@ -77,18 +77,20 @@ def parse_annotation_file(file_path: str) -> list[Annotation]:
     return annotations
 
 
-def extract_book_identifier(annotation_filename: str) -> str:
+def extract_book_identifier(annotation_file_path: str) -> str:
     """
-    Extract the book identifier from an annotation filename.
+    Extract the book identifier from the first line of an annotation file.
 
-    Format: "Author - Year - Book Title-annotation-YYYY-MM-DD_HH_MM_SS.txt"
-    Returns: "Author - Year - Book Title"
+    The first line format is: "Reading Notes | <<Book Identifier>>Author Name"
+    Returns: The text between << and >>
     """
-    # Remove .txt extension
-    name = annotation_filename.removesuffix(".txt")
+    with open(annotation_file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline().strip()
 
-    # Split on "-annotation-" to get the book identifier
-    if "-annotation-" in name:
-        return name.split("-annotation-")[0].strip()
+    # Extract text between << and >>
+    match = re.search(r"<<(.+?)>>", first_line)
+    if match:
+        return match.group(1).strip()
 
-    return name.strip()
+    # Fallback: if pattern not found, raise an error
+    raise ValueError(f"Could not extract book identifier from first line: {first_line}")

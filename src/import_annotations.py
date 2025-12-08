@@ -3,7 +3,6 @@ Core functionality for importing EPUB annotations into Zotero database.
 """
 
 import logging
-from pathlib import Path
 
 from src.models import Annotation
 from src.cfi_generator_js import create_epub_cfi_js
@@ -11,15 +10,6 @@ from src.utils import create_position_json
 from src.database import create_database_backup, AnnotationImporter
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
-
-
-def find_annotation_file(base_dir: Path) -> Path | None:
-    """
-    Find annotation text files in the directory.
-    Returns the first file matching the pattern *-annotation-*.txt
-    """
-    files = list(base_dir.glob("*-annotation-*.txt"))
-    return files[0] if files else None
 
 
 def import_annotations_to_database(
