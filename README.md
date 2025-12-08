@@ -83,4 +83,4 @@ Tested with Python 3.13.9, Node.js 25.2.1, Zotero 7.0.30 on an M2 MacBook Air an
 
 ## Alternative Solutions
 
-Simply convert your epub to PDF and annotate the PDF. This loses the reflowable text and may not be as convenient.
+Simply convert your epub to PDF and annotate the PDF.
