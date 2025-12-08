@@ -12,7 +12,8 @@ def parse_annotation_file(file_path: str | Path) -> list[Annotation]:
     Expected format:
         -------------------
         YYYY-MM-DD HH:MM | Page No.: XXX
-        Annotation text here...
+        Highlighted text here...
+        【Annotation】Comment text (optional)
         -------------------
     """
     with open(file_path, "r", encoding="utf-8") as f:
@@ -52,7 +53,16 @@ def parse_annotation_file(file_path: str | Path) -> list[Annotation]:
         text = "\n".join(text_lines).strip()
 
         if text:
-            annotations.append(Annotation(timestamp=timestamp, page=page, text=text))
+            # Check if there's a comment marker 【Annotation】
+            comment = None
+            if "【Annotation】" in text:
+                parts = text.split("【Annotation】", 1)
+                text = parts[0].strip()
+                comment = parts[1].strip() if len(parts) > 1 else None
+
+            annotations.append(
+                Annotation(timestamp=timestamp, page=page, text=text, comment=comment)
+            )
 
     return annotations
 

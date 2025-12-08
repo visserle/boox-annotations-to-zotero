@@ -10,6 +10,7 @@ class Annotation:
     timestamp: str
     page: str
     text: str
+    comment: str | None = None
     position: str | None = None
     cfi: str | None = None
     sort_index: str | None = None

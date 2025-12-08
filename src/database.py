@@ -371,13 +371,14 @@ class AnnotationImporter:
                     itemID, parentItemID, type, text, comment, 
                     color, pageLabel, sortIndex, position, isExternal
                 )
-                VALUES (?, ?, ?, ?, '', ?, '', ?, ?, 0)
+                VALUES (?, ?, ?, ?, ?, ?, '', ?, ?, 0)
                 """,
                 (
                     item_id,
                     parent_item_id,
                     HIGHLIGHT_TYPE,
                     annotation.text,
+                    annotation.comment or "",
                     highlight_color,
                     sort_index,
                     position_json,

@@ -11,7 +11,7 @@ Import annotations from Boox e-readers into Zotero's EPUB reader with accurate p
 
 ## Requirements
 
-- **Python 3.8+**
+- **Python 3.12+**
 - **Node.js 14+**
 - **Zotero** with EPUB files in your library
 
@@ -124,3 +124,5 @@ python test/test_cfi.py
 ```
 
 The test suite compares generated CFIs against actual Zotero annotations from Romeo & Juliet and The History of Drink.
+
+Tested with Python 3.13.9, Node.js 25.2.1 and Zotero 7.0.30 on an M2 MacBook Air.
