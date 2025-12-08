@@ -1,3 +1,5 @@
+![alt text](image.png)
+
 # Boox Annotations to Zotero
 
 Import annotations from Boox e-readers into Zotero's EPUB reader with accurate positioning using EPUB CFI (Canonical Fragment Identifier).
