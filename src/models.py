@@ -43,12 +43,3 @@ class EPUBInfo:
         from pathlib import Path
 
         return str(Path(storage_dir) / self.filename)
-
-
-@dataclass
-class TextLocation:
-    """Location of text within an EPUB."""
-
-    spine_index: int
-    char_offset: int
-    text_length: int

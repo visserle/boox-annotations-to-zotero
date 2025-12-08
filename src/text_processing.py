@@ -5,27 +5,6 @@ from pathlib import Path
 from src.models import Annotation
 
 
-def normalize_text(text: str) -> str:
-    """
-    Normalize text for matching by handling smart quotes and whitespace.
-
-    Converts Unicode smart quotes and apostrophes to ASCII equivalents
-    so that text from annotation files can match EPUB content.
-    """
-    replacements = {
-        "\u201c": '"',  # " -> "
-        "\u201d": '"',  # " -> "
-        "\u2018": "'",  # ' -> '
-        "\u2019": "'",  # ' -> '
-    }
-
-    for unicode_char, ascii_char in replacements.items():
-        text = text.replace(unicode_char, ascii_char)
-
-    # Collapse whitespace
-    return re.sub(r"\s+", " ", text.strip())
-
-
 def parse_annotation_file(file_path: str | Path) -> list[Annotation]:
     """
     Parse the annotation text file and extract annotations.

@@ -1,17 +1,40 @@
 """Utility functions for annotation processing."""
 
 import json
+import platform
 import re
 from pathlib import Path
 
 
+def _get_zotero_profiles_dir() -> Path:
+    """Get the Zotero profiles directory based on the operating system."""
+    system = platform.system()
+
+    if system == "Darwin":  # macOS
+        return Path.home() / "Library/Application Support/Zotero/Profiles"
+    elif system == "Windows":
+        # Use APPDATA environment variable
+        appdata = Path.home() / "AppData/Roaming"
+        return appdata / "Zotero/Profiles"
+    else:  # Linux and other Unix-like systems
+        # Try common locations
+        zotero_dir = Path.home() / ".zotero/zotero"
+        if zotero_dir.exists():
+            return zotero_dir / "Profiles"
+        # Alternative location
+        return Path.home() / ".zotero/zotero/Profiles"
+
+
 def _read_zotero_pref(key: str) -> str | None:
     """Read a preference value from Zotero's prefs.js file."""
-    prefs_file = Path.home() / "Library/Application Support/Zotero/Profiles"
-    prefs_files = list(prefs_file.glob("*/prefs.js"))
+    prefs_dir = _get_zotero_profiles_dir()
+    prefs_files = list(prefs_dir.glob("*/prefs.js"))
 
     if not prefs_files:
-        raise FileNotFoundError("Zotero preferences not found")
+        raise FileNotFoundError(
+            f"Zotero preferences not found in {prefs_dir}. "
+            "Make sure Zotero is installed and has been run at least once."
+        )
 
     content = prefs_files[0].read_text()
     match = re.search(rf'user_pref\("{re.escape(key)}",\s*"([^"]+)"\)', content)
@@ -37,7 +60,7 @@ def get_zotero_storage_dir() -> Path:
     return get_zotero_data_dir() / "storage"
 
 
-def create_position_json(cfi: str, page_label: str = "") -> str:
+def create_position_json(cfi: str) -> str:
     """
     Create the position JSON for Zotero.
 
