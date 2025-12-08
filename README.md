@@ -62,13 +62,9 @@ The tool uses JavaScript for CFI generation because it uses the same `epubcfi.js
 
 ## Troubleshooting
 
-Make sure:
-- The EPUB is imported in Zotero
-- The filename in Zotero matches the Boox annotation filename (author and title; first line of the annotation file in the << >> brackets)
+Make sure sure that the EPUB file is available in Zotero and that the first line of the Boox annotation .txt states the author and title in the << >> brackets (see `/examples`).
 
-What happens if the text is not found in EPUB?
-
-The tool will use a fallback CFI based on page number. The annotation will still be imported but may not be positioned exactly.
+If the text is not found in EPUB, there will be a fallback CFI based on page number. The annotation will still be imported but may not be positioned exactly.
 
 ## Limitations
 
@@ -86,4 +82,4 @@ The test suite compares generated CFIs against actual Zotero annotations from Ro
 
 ## Alternative Solutions
 
-Convert your epub to PDF and annotate the PDF.
+Convert your EPUB to PDF and annotate the PDF.
