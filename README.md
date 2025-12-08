@@ -2,11 +2,11 @@
 
 # The Problem
 
-EPUB annotations are stored externally, not in the file itself. Each system manages annotations differently, making transfers between systems nearly impossible. BOOX NeoReader annotations can only be exported as .txt files, which other EPUB readers can't directly read.
+EPUB annotations are stored externally, not in the file itself. Each system manages annotations differently, making transfers between systems nearly impossible. BOOX NeoReader annotations can only be exported as .txt files, which other EPUB readers like Zoteros can't directly read.
 
 # The Solution
 
-This repository helps to import annotations from a BOOX e-readers into Zotero's EPUB reader with accurate positioning.
+This repository helps importing annotations from a BOOX e-readers into Zotero's EPUB reader with accurate positioning.
 
 ## Features
 
