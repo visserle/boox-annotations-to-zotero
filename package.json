@@ -1,0 +1,26 @@
+{
+    "name": "boox-annotations-cfi-generator",
+    "version": "1.0.0",
+    "description": "EPUB CFI generation for Boox annotations",
+    "type": "module",
+    "main": "src/epubcfi.js",
+    "scripts": {
+        "test": "mocha test/**/*.test.js"
+    },
+    "keywords": [
+        "epub",
+        "cfi",
+        "annotations"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@xmldom/xmldom": "^0.8.0",
+        "jsdom": "^23.0.0",
+        "jszip": "^3.10.1",
+        "xml2js": "^0.6.2"
+    },
+    "devDependencies": {
+        "mocha": "^10.0.0"
+    }
+}
