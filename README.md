@@ -1,10 +1,14 @@
 ![alt text](image.png)
 
-# Boox Annotations to Zotero
+# The Problem
 
-Import annotations from Boox e-readers into Zotero's EPUB reader with accurate positioning using EPUB CFI (Canonical Fragment Identifier).
+EPUB annotations are not stored in the file itself, but externally. Each system has its own way of managing annotations, which makes it nearly impossible to transfer annotations between them. The only way to access annotations created in BOOX's NeoReader is to export them to a .txt file. However, this .txt file cannot be read directly in other EPUB readers.
 
-Note that this script modifies your Zotero database directly. Always back up your database before running the import.
+# The Solution
+
+This repository helps to import annotations from a BOOX e-readers into Zotero's EPUB reader with accurate positioning using EPUB CFI (Canonical Fragment Identifier).
+
+Note that this script modifies your Zotero database directly.
 
 ## Features
 
