@@ -3,11 +3,11 @@
 import sys
 from pathlib import Path
 
+from src.cfi_generator_js import create_epub_cfi_js
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
-
-from src.cfi_generator_js import create_epub_cfi_js
 
 # Construct paths relative to project root
 EXAMPLES_DIR = project_root / "examples"
