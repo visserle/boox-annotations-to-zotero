@@ -9,8 +9,6 @@ from datetime import datetime
 from src.models import Annotation, EPUBInfo
 from src.config import (
     LIBRARY_ID,
-    ZOTERO_KEY_CHARS,
-    ZOTERO_KEY_LENGTH,
     ANNOTATION_ITEM_TYPE_ID,
     HIGHLIGHT_TYPE,
     DEFAULT_HIGHLIGHT_COLOR,
@@ -26,7 +24,7 @@ def generate_zotero_key() -> str:
     Valid characters: 23456789ABCDEFGHIJKLMNPQRSTUVWXYZ
     Excludes: 0, 1, I, O (to avoid confusion)
     """
-    return "".join(random.choice(ZOTERO_KEY_CHARS) for _ in range(ZOTERO_KEY_LENGTH))
+    return "".join(random.choice("23456789ABCDEFGHJKLMNPQRSTUVWXYZ") for _ in range(8))
 
 
 def get_existing_keys(db_path: str) -> set[str]:
