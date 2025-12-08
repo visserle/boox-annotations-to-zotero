@@ -37,13 +37,15 @@ Note that this script modifies your Zotero database directly. Always back up you
 
 1. **Export annotations from your Boox device**. From the NeoReader app, select Contents > Annotations > Select All > Export to Local Storage or Share. The file should be named like `Book Title-annotation-YYYY-MM-DD_HH_MM_SS.txt`. Save the file to your computer.
 
-2. **Run the import:**
+2. **Close Zotero.**
+
+3. **Run the import:**
    ```bash
    python -m main path/to/annotations.txt
    ```
    Zotero's path and database is automatically detected, but can be overridden with: `--zotero-dir /path/to/zotero`.
 
-3. **Restart Zotero** to see your imported annotations.
+4. **Restart Zotero** to see your imported annotations.
 
 ## How It Works
 
