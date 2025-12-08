@@ -111,6 +111,11 @@ Make sure:
 
 The tool will use a fallback CFI based on page number. The annotation will still be imported but may not be positioned exactly.
 
+## Limitations
+
+- Only supports highlight annotations
+- There can only be one color as Boox does not store color information in the annotation file
+
 ## Running Tests
 
 ```bash
