@@ -12,7 +12,6 @@ from src.config import (
     LIBRARY_ID,
     ANNOTATION_ITEM_TYPE_ID,
     HIGHLIGHT_TYPE,
-    DEFAULT_HIGHLIGHT_COLOR,
 )
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -80,7 +79,13 @@ def find_epub_in_database(db_path: str | Path, book_identifier: str) -> EPUBInfo
             item_id, parent_id, path = result
             filename = path.removeprefix("attachments:")
             logger.debug(f"Database match (exact): {filename}")
-            return EPUBInfo(item_id=item_id, parent_id=parent_id, filename=filename)
+            return EPUBInfo(
+                item_id=item_id,
+                parent_id=parent_id,
+                filename=filename,
+                confidence=1.0,
+                match_method="exact",
+            )
 
         # Strategy 2: Fuzzy matching - tokenize and find best partial match
         # Get all EPUB attachments
@@ -142,7 +147,13 @@ def find_epub_in_database(db_path: str | Path, book_identifier: str) -> EPUBInfo
             item_id, parent_id, filename = best_match
             logger.debug(f"Database match (fuzzy, score={best_score:.2f}): {filename}")
             logger.debug(f"  Query: {book_identifier}")
-            return EPUBInfo(item_id=item_id, parent_id=parent_id, filename=filename)
+            return EPUBInfo(
+                item_id=item_id,
+                parent_id=parent_id,
+                filename=filename,
+                confidence=best_score,
+                match_method="fuzzy",
+            )
 
         # Strategy 3: Try matching with Zotero item metadata (creator + title)
         # This helps when the filename doesn't match the annotation filename pattern
@@ -196,7 +207,13 @@ def find_epub_in_database(db_path: str | Path, book_identifier: str) -> EPUBInfo
             )
             logger.debug(f"  Authors: {creators}")
             logger.debug(f"  Title: {title}")
-            return EPUBInfo(item_id=item_id, parent_id=parent_id, filename=filename)
+            return EPUBInfo(
+                item_id=item_id,
+                parent_id=parent_id,
+                filename=filename,
+                confidence=best_score,
+                match_method="metadata",
+            )
 
         # No match found - log available EPUBs to help debugging
         logger.error("No matching EPUB found. Available EPUB files:")
@@ -303,6 +320,7 @@ class AnnotationImporter:
         parent_item_id: int,
         position_json: str,
         sort_index: str,
+        highlight_color: str,
     ) -> bool | None:
         """
         Insert a single annotation into the database.
@@ -360,7 +378,7 @@ class AnnotationImporter:
                     parent_item_id,
                     HIGHLIGHT_TYPE,
                     annotation.text,
-                    DEFAULT_HIGHLIGHT_COLOR,
+                    highlight_color,
                     sort_index,
                     position_json,
                 ),

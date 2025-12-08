@@ -30,6 +30,8 @@ class EPUBInfo:
     item_id: int
     parent_id: int
     filename: str
+    confidence: float = 1.0  # Confidence score (0.0 to 1.0)
+    match_method: str = "exact"  # How the match was found
 
     def get_full_path(self, storage_dir) -> str:
         """Get the full path to the EPUB file.

@@ -16,4 +16,11 @@ LIBRARY_ID = 1
 # Zotero annotation settings
 ANNOTATION_ITEM_TYPE_ID = 1  # itemTypeID for annotation
 HIGHLIGHT_TYPE = 1  # type = 1 for highlight annotation
-DEFAULT_HIGHLIGHT_COLOR = "#ffd400"
+COLOR_MAP = {  # Color mapping for highlight colors
+    "yellow": "#ffd400",
+    "red": "#ff6666",
+    "green": "#5fb236",
+    "blue": "#2ea8e5",
+    "purple": "#a28ae5",
+    "orange": "#ff8c00",
+}

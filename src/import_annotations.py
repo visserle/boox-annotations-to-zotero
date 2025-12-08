@@ -18,6 +18,7 @@ def import_annotations_to_database(
     annotations: list[Annotation],
     epub_path: str | Path,
     parent_item_id: int,
+    highlight_color: str,
 ) -> tuple[int, int, int]:
     """
     Import annotations into the Zotero database using JavaScript CFI generation.
@@ -76,7 +77,7 @@ def import_annotations_to_database(
 
             # Insert annotation
             result = importer.insert_annotation(
-                annotation, parent_item_id, position_json, sort_index
+                annotation, parent_item_id, position_json, sort_index, highlight_color
             )
 
             if result is True:

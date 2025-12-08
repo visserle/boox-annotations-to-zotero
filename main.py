@@ -10,7 +10,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from src.config import ZOTERO_DATA_DIR
+from src.config import ZOTERO_DATA_DIR, COLOR_MAP
 from src.log_config import configure_logging
 from src.text_processing import parse_annotation_file, extract_book_identifier
 from src.database import find_epub_in_database
@@ -52,6 +52,14 @@ Examples:
         type=Path,
         metavar="PATH",
         help=f"path to Zotero data directory (default: {ZOTERO_DATA_DIR})",
+    )
+
+    parser.add_argument(
+        "--highlight-color",
+        type=str,
+        choices=COLOR_MAP.keys(),
+        default="yellow",
+        help="highlight color for imported annotations (default: yellow)",
     )
 
     return parser.parse_args()
@@ -104,9 +112,26 @@ def main():
         logger.error("Ensure the EPUB is imported and filename matches")
         sys.exit(1)
 
+    # For low-confidence matches, ask user to confirm
+    CONFIDENCE_THRESHOLD = 0.9
+    if epub_info.confidence < CONFIDENCE_THRESHOLD:
+        logger.warning(
+            f"Found potential match with {epub_info.confidence:.0%} confidence:"
+        )
+        logger.warning(f"  File: {epub_info.filename}")
+        logger.warning(f"  Match method: {epub_info.match_method}")
+        logger.warning(f"  Searching for: {book_identifier}")
+
+        response = input("\nIs this the correct EPUB? [y/N]: ").strip().lower()
+        if response not in ["y", "yes"]:
+            logger.error("Match rejected by user. Please check the EPUB filename.")
+            sys.exit(1)
+        logger.info("Match confirmed by user.")
+
     logger.info(f"Located EPUB: {epub_info.filename}")
     logger.debug(f"  Attachment ID: {epub_info.item_id}")
     logger.debug(f"  Parent ID: {epub_info.parent_id}")
+    logger.debug(f"  Confidence: {epub_info.confidence:.0%} ({epub_info.match_method})")
 
     # Locate EPUB file in Zotero storage
     epub_path = Path(epub_info.get_full_path(storage_dir))
@@ -130,7 +155,11 @@ def main():
 
     # Import annotations
     successful, skipped, failed = import_annotations_to_database(
-        db_path, annotations, epub_path, epub_info.item_id
+        db_path,
+        annotations,
+        epub_path,
+        epub_info.item_id,
+        COLOR_MAP[args.highlight_color],
     )
 
     # Show summary
