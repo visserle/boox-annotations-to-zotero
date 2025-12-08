@@ -65,7 +65,7 @@ Make sure:
 - The EPUB is imported in Zotero
 - The filename in Zotero matches the Boox annotation filename (author and title; first line of the annotation file in the << >> brackets)
 
-### Text not found in EPUB
+What happens if the text is not found in EPUB?
 
 The tool will use a fallback CFI based on page number. The annotation will still be imported but may not be positioned exactly.
 
@@ -81,9 +81,7 @@ The tool will use a fallback CFI based on page number. The annotation will still
 python test/test_cfi.py
 ```
 
-The test suite compares generated CFIs against actual Zotero annotations from Romeo & Juliet and The History of Drink.
-
-Tested with Python 3.13.9, Node.js 25.2.1, Zotero 7.0.30 on an M2 MacBook Air and NeoReader 38133 on a Boox Page.
+The test suite compares generated CFIs against actual Zotero annotations from Romeo & Juliet and The History of Drink. Tested with Python 3.13.9, Node.js 25.2.1, Zotero 7.0.30 on an M2 MacBook Air and NeoReader 38133 on a Boox Page.
 
 ## Alternative Solutions
 
