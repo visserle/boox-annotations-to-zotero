@@ -3,10 +3,9 @@
 import json
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 
-def create_epub_cfi_js(epub_path: str | Path, search_text: str) -> Optional[str]:
+def create_epub_cfi_js(epub_path: str | Path, search_text: str) -> str | None:
     """
     Create an EPUB CFI using the JavaScript implementation with epub.js.
 
@@ -22,13 +21,8 @@ def create_epub_cfi_js(epub_path: str | Path, search_text: str) -> Optional[str]
         CFI string or None if generation fails
     """
     try:
-        # Get the path to the epub-cfi-generator.js script (in src directory)
-        script_dir = Path(__file__).parent
-        cfi_generator = script_dir / "epub-cfi-generator.js"
-
-        if not cfi_generator.exists():
-            print(f"Error: CFI generator script not found at {cfi_generator}")
-            return None
+        # Get the path to the epub-cfi-generator.js script (also in src directory)
+        cfi_generator = Path(__file__).parent / "epub-cfi-generator.js"
 
         # Call Node.js script with JSON output for better error handling
         result = subprocess.run(
