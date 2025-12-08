@@ -6,6 +6,7 @@ Import annotations from Boox e-readers into Zotero's EPUB reader.
 
 import argparse
 import logging
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from src.config import ZOTERO_DATA_DIR
 from src.log_config import configure_logging
 from src.text_processing import parse_annotation_file, extract_book_identifier
 from src.database import find_epub_in_database
+from src.utils import get_zotero_storage_dir
 from src.import_annotations import (
     import_annotations_to_database,
     print_import_summary,
@@ -63,30 +65,40 @@ def main():
     log_level = logging.DEBUG if args.debug else logging.INFO
     configure_logging(stream_level=log_level)
 
-    # Determine Zotero data directory (=/= storage directory)
+    # Determine Zotero data directory
     zotero_dir = args.zotero_dir if args.zotero_dir else ZOTERO_DATA_DIR
     db_path = zotero_dir / "zotero.sqlite"
-    storage_dir = zotero_dir / "storage"
+
+    # Get storage directory (may be different from data_dir/storage if custom path is set)
+    try:
+        storage_dir = get_zotero_storage_dir()
+    except (FileNotFoundError, ValueError):
+        # Fallback to default location
+        storage_dir = zotero_dir / "storage"
 
     # Check if database exists
     if not db_path.exists():
         logger.error(f"Database not found: {db_path}")
         sys.exit(1)
 
-    # Determine annotation file
-    annotation_path = args.annotation_file
-    if not annotation_path.is_absolute():
-        annotation_path = Path.cwd() / annotation_path
-
+    # Resolve annotation file path
+    annotation_path = args.annotation_file.resolve()
     if not annotation_path.exists():
         logger.error(f"File not found: {annotation_path}")
         sys.exit(1)
 
     # Extract book identifier and find EPUB in database
-    book_identifier = extract_book_identifier(str(annotation_path))
+    book_identifier = extract_book_identifier(annotation_path)
     logger.debug(f"Searching for book: {book_identifier}")
 
-    epub_info = find_epub_in_database(str(db_path), book_identifier)
+    try:
+        epub_info = find_epub_in_database(db_path, book_identifier)
+    except sqlite3.OperationalError as e:
+        if "database is locked" in str(e):
+            logger.error("Database is locked. Please close Zotero and try again.")
+            sys.exit(1)
+        raise
+
     if not epub_info:
         logger.error(f"EPUB not found in Zotero database: {book_identifier}")
         logger.error("Ensure the EPUB is imported and filename matches")
@@ -104,10 +116,8 @@ def main():
         sys.exit(1)
 
     # Parse annotations
-    annotations = parse_annotation_file(str(annotation_path))
-    logger.info(
-        f"Parsed {len(annotations)} annotation{'s' if len(annotations) != 1 else ''}"
-    )
+    annotations = parse_annotation_file(annotation_path)
+    logger.info(f"Parsed {len(annotations)} annotation(s)")
 
     if not annotations:
         logger.warning("No annotations found")
@@ -120,12 +130,11 @@ def main():
 
     # Import annotations
     successful, skipped, failed = import_annotations_to_database(
-        str(db_path), annotations, str(epub_path), epub_info.item_id
+        db_path, annotations, epub_path, epub_info.item_id
     )
 
     # Show summary
-    backup_path = f"{db_path}.pre-import-backup"
-    print_import_summary(successful, skipped, failed, backup_path)
+    print_import_summary(successful, skipped, failed, db_path)
 
 
 if __name__ == "__main__":

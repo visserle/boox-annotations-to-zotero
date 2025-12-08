@@ -1,6 +1,7 @@
 """Text processing utilities for annotation parsing and normalization."""
 
 import re
+from pathlib import Path
 from src.models import Annotation
 
 
@@ -25,7 +26,7 @@ def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip())
 
 
-def parse_annotation_file(file_path: str) -> list[Annotation]:
+def parse_annotation_file(file_path: str | Path) -> list[Annotation]:
     """
     Parse the annotation text file and extract annotations.
 
@@ -77,7 +78,7 @@ def parse_annotation_file(file_path: str) -> list[Annotation]:
     return annotations
 
 
-def extract_book_identifier(annotation_file_path: str) -> str:
+def extract_book_identifier(annotation_file_path: str | Path) -> str:
     """
     Extract the book identifier from the first line of an annotation file.
 

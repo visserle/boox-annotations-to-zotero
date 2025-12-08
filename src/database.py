@@ -5,6 +5,7 @@ import random
 import sqlite3
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 from src.models import Annotation, EPUBInfo
 from src.config import (
@@ -44,7 +45,7 @@ def generate_unique_key(existing_keys: set[str]) -> str:
             return key
 
 
-def find_epub_in_database(db_path: str, book_identifier: str) -> EPUBInfo | None:
+def find_epub_in_database(db_path: str | Path, book_identifier: str) -> EPUBInfo | None:
     """
     Find the EPUB file and parent item ID in the Zotero database.
 
@@ -208,7 +209,7 @@ def find_epub_in_database(db_path: str, book_identifier: str) -> EPUBInfo | None
         return None
 
 
-def create_database_backup(db_path: str) -> str:
+def create_database_backup(db_path: str | Path) -> str:
     """Create a backup of the database before making changes."""
     backup_path = f"{db_path}.pre-import-backup"
     shutil.copy2(db_path, backup_path)
@@ -218,8 +219,8 @@ def create_database_backup(db_path: str) -> str:
 class AnnotationImporter:
     """Handles the import of annotations into the Zotero database."""
 
-    def __init__(self, db_path: str):
-        self.db_path = db_path
+    def __init__(self, db_path: str | Path):
+        self.db_path = str(db_path)
         self.conn: sqlite3.Connection | None = None
         self.cursor: sqlite3.Cursor | None = None
         self.existing_keys: set[str] = set()

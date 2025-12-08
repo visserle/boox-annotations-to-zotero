@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def create_epub_cfi_js(epub_path: str, search_text: str) -> Optional[str]:
+def create_epub_cfi_js(epub_path: str | Path, search_text: str) -> Optional[str]:
     """
     Create an EPUB CFI using the JavaScript implementation with epub.js.
 
@@ -32,7 +32,14 @@ def create_epub_cfi_js(epub_path: str, search_text: str) -> Optional[str]:
 
         # Call Node.js script with JSON output for better error handling
         result = subprocess.run(
-            ["node", str(cfi_generator), epub_path, search_text, "--output", "json"],
+            [
+                "node",
+                str(cfi_generator),
+                str(epub_path),
+                search_text,
+                "--output",
+                "json",
+            ],
             capture_output=True,
             text=True,
             timeout=30,  # Increased timeout for EPUB parsing

@@ -3,6 +3,7 @@ Core functionality for importing EPUB annotations into Zotero database.
 """
 
 import logging
+from pathlib import Path
 
 from src.models import Annotation
 from src.cfi_generator_js import create_epub_cfi_js
@@ -13,7 +14,10 @@ logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
 
 def import_annotations_to_database(
-    db_path: str, annotations: list[Annotation], epub_path: str, parent_item_id: int
+    db_path: str | Path,
+    annotations: list[Annotation],
+    epub_path: str | Path,
+    parent_item_id: int,
 ) -> tuple[int, int, int]:
     """
     Import annotations into the Zotero database using JavaScript CFI generation.
@@ -21,9 +25,7 @@ def import_annotations_to_database(
     Returns:
         Tuple of (successful_count, skipped_count, failed_count)
     """
-    logger.info(
-        f"Importing {len(annotations)} annotation{'s' if len(annotations) != 1 else ''}..."
-    )
+    logger.info(f"Importing {len(annotations)} annotation(s)...")
 
     # Create backup
     backup_path = create_database_backup(db_path)
@@ -107,7 +109,9 @@ def _create_sort_index_from_page(page: str) -> str:
     return f"{0:05d}|{char_offset:08d}"
 
 
-def print_import_summary(successful: int, skipped: int, failed: int, backup_path: str):
+def print_import_summary(
+    successful: int, skipped: int, failed: int, db_path: str | Path
+):
     """Print a summary of the import operation."""
     logger.info("")
     logger.info(f"Imported: {successful} | Skipped: {skipped} | Failed: {failed}")
