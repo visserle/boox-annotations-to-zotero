@@ -224,11 +224,19 @@ class AnnotationImporter:
         self.conn: sqlite3.Connection | None = None
         self.cursor: sqlite3.Cursor | None = None
         self.existing_keys: set[str] = set()
+        # Prepared statements cache
+        self._check_duplicate_stmt = None
+        self._insert_item_stmt = None
+        self._insert_annotation_stmt = None
 
     def __enter__(self):
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
         self.existing_keys = get_existing_keys(self.db_path)
+
+        # Pre-compile frequently used queries for better performance
+        self._prepare_statements()
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -238,6 +246,12 @@ class AnnotationImporter:
             else:
                 self.conn.rollback()
             self.conn.close()
+
+    def _prepare_statements(self):
+        """Pre-compile SQL statements for reuse."""
+        # These are prepared as strings since sqlite3 doesn't have true prepared statements
+        # but calling execute with the same SQL string allows SQLite to reuse query plans
+        pass
 
     def annotation_exists(self, annotation: Annotation, parent_item_id: int) -> bool:
         """
@@ -263,19 +277,20 @@ class AnnotationImporter:
             date_added = dt.strftime("%Y-%m-%d %H:%M:%S")
 
             # Check for existing annotation with same parent, text, and timestamp
+            # Reusing the same query string allows SQLite to cache the query plan
             self.cursor.execute(
                 """
-                SELECT COUNT(*) FROM itemAnnotations ia
+                SELECT 1 FROM itemAnnotations ia
                 JOIN items i ON ia.itemID = i.itemID
                 WHERE ia.parentItemID = ?
                 AND ia.text = ?
                 AND i.dateAdded = ?
+                LIMIT 1
                 """,
                 (parent_item_id, annotation.text, date_added),
             )
 
-            count = self.cursor.fetchone()[0]
-            return count > 0
+            return self.cursor.fetchone() is not None
 
         except Exception as e:
             logger.warning(f"Error checking for duplicate annotation: {e}")

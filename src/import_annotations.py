@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from src.models import Annotation
-from src.cfi_generator_js import create_epub_cfi_js
+from src.cfi_generator_js import create_epub_cfi_batch_js
 from src.utils import create_position_json
 from src.database import create_database_backup, AnnotationImporter
 
@@ -31,18 +31,20 @@ def import_annotations_to_database(
     backup_path = create_database_backup(db_path)
     logger.debug(f"Database backup created at: {backup_path}")
 
+    # Generate all CFIs in batch (much faster than individual calls)
+    logger.debug("Generating CFIs in batch mode...")
+    search_texts = [annotation.text for annotation in annotations]
+    cfis = create_epub_cfi_batch_js(epub_path, search_texts)
+
     successful = 0
     skipped = 0
     failed = 0
 
     with AnnotationImporter(db_path) as importer:
-        for idx, annotation in enumerate(annotations, 1):
+        for idx, (annotation, cfi) in enumerate(zip(annotations, cfis), 1):
             logger.debug(
                 f"[{idx}/{len(annotations)}] Processing page {annotation.page}"
             )
-
-            # Generate CFI using JavaScript/epub.js
-            cfi = create_epub_cfi_js(epub_path, annotation.text)
 
             if cfi:
                 # Create position JSON from CFI

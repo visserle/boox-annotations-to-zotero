@@ -9,9 +9,8 @@ def create_epub_cfi_js(epub_path: str | Path, search_text: str) -> str | None:
     """
     Create an EPUB CFI using the JavaScript implementation with epub.js.
 
-    This function calls the Node.js epub-cfi-generator.js script which uses
-    futurepress/epub.js to parse the EPUB and generate a CFI that matches
-    Zotero's behavior exactly.
+    This is a convenience wrapper around create_epub_cfi_batch_js for single annotations.
+    For processing multiple annotations, use create_epub_cfi_batch_js directly for better performance.
 
     Args:
         epub_path: Path to the EPUB file
@@ -20,49 +19,71 @@ def create_epub_cfi_js(epub_path: str | Path, search_text: str) -> str | None:
     Returns:
         CFI string or None if generation fails
     """
+    # Use batch function with single item for consistency
+    results = create_epub_cfi_batch_js(epub_path, [search_text])
+    return results[0] if results else None
+
+
+def create_epub_cfi_batch_js(
+    epub_path: str | Path, search_texts: list[str]
+) -> list[str | None]:
+    """
+    Create multiple EPUB CFIs in batch mode using a single Node.js subprocess.
+
+    This is much faster than calling create_epub_cfi_js multiple times because
+    the EPUB is only parsed once.
+
+    Args:
+        epub_path: Path to the EPUB file
+        search_texts: List of texts to search for and generate CFIs from
+
+    Returns:
+        List of CFI strings (or None for failed generations) in same order as input
+    """
     try:
-        # Get the path to the epub-cfi-generator.js script (also in src directory)
+        # Get the path to the epub-cfi-generator.js script
         cfi_generator = Path(__file__).parent / "epub-cfi-generator.js"
 
-        # Call Node.js script with JSON output for better error handling
+        # Prepare batch input as JSON
+        batch_json = json.dumps(search_texts)
+
+        # Call Node.js script in batch mode
         result = subprocess.run(
             [
                 "node",
                 str(cfi_generator),
                 str(epub_path),
-                search_text,
-                "--output",
-                "json",
+                batch_json,
+                "--batch",
             ],
             capture_output=True,
             text=True,
-            timeout=30,  # Increased timeout for EPUB parsing
+            timeout=60,  # Longer timeout for batch processing
         )
 
         if result.returncode == 0:
             try:
                 output = json.loads(result.stdout.strip())
+                # Extract CFIs from batch results
+                cfis = []
+                for item in output:
+                    if "error" in item or item.get("cfi") is None:
+                        cfis.append(None)
+                    else:
+                        cfis.append(item["cfi"])
+                return cfis
 
-                if "error" in output:
-                    print(f"CFI generation error: {output['error']}")
-                    return None
-
-                # Extract CFI from output
-                cfi = output.get("cfi")
-                return cfi if cfi else None
-
-            except json.JSONDecodeError:
-                # Fallback: try to parse as plain text CFI
-                cfi = result.stdout.strip()
-                return cfi if cfi and cfi.startswith("epubcfi(") else None
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Error parsing batch CFI results: {e}")
+                return [None] * len(search_texts)
         else:
             error_msg = result.stderr.strip() if result.stderr else "Unknown error"
-            print(f"CFI generation failed: {error_msg}")
-            return None
+            print(f"Batch CFI generation failed: {error_msg}")
+            return [None] * len(search_texts)
 
     except subprocess.TimeoutExpired:
-        print("Error: CFI generation timed out")
-        return None
+        print("Error: Batch CFI generation timed out")
+        return [None] * len(search_texts)
     except Exception as e:
-        print(f"Error generating CFI with JavaScript: {e}")
-        return None
+        print(f"Error generating batch CFIs with JavaScript: {e}")
+        return [None] * len(search_texts)

@@ -331,54 +331,135 @@ async function generateCFI(epubPath, searchText, options = {}) {
 }
 
 /**
+ * Process multiple search texts in batch
+ */
+async function generateCFIBatch(epubPath, searchTexts, options = {}) {
+    // Parse EPUB once
+    const { zip, spine } = await parseEpub(epubPath);
+    const results = [];
+
+    // Search for each text
+    for (const searchText of searchTexts) {
+        let foundMatch = false;
+
+        // Search through all spine items
+        for (let i = 0; i < spine.length; i++) {
+            const spineItem = spine[i];
+
+            try {
+                // Load the HTML content
+                let htmlContent = await zip.file(spineItem.href).async('string');
+
+                htmlContent = htmlContent
+                    .replace(/&nbsp;/g, '\u00A0')
+                    .replace(/&mdash;/g, '\u2014')
+                    .replace(/&ndash;/g, '\u2013')
+                    .replace(/&lsquo;/g, '\u2018')
+                    .replace(/&rsquo;/g, '\u2019')
+                    .replace(/&ldquo;/g, '\u201C')
+                    .replace(/&rdquo;/g, '\u201D')
+                    .replace(/&hellip;/g, '\u2026');
+
+                const dom = new JSDOM(htmlContent, { contentType: 'application/xhtml+xml' });
+                const doc = dom.window.document;
+
+                const bodyText = doc.body ? doc.body.textContent : doc.documentElement.textContent;
+                const normalizedBodyText = normalizeText(bodyText);
+                const normalizedSearch = normalizeText(searchText);
+
+                const exactMatch = normalizedBodyText.toLowerCase().includes(normalizedSearch.toLowerCase());
+                const fuzzyMatch = !exactMatch &&
+                    normalizedBodyText.replace(/\s+/g, '').toLowerCase().includes(normalizedSearch.replace(/\s+/g, '').toLowerCase());
+
+                if (exactMatch || fuzzyMatch) {
+                    let range = exactMatch ? findTextInDocument(doc, searchText, false) : null;
+                    if (!range) {
+                        range = findTextInDocument(doc, searchText, true);
+                    }
+
+                    if (range) {
+                        const baseCfi = `/6/${(i + 1) * 2}`;
+                        const cfi = new EpubCFI(range, baseCfi);
+                        const cfiString = cfi.toString();
+
+                        results.push({ cfi: cfiString, searchText });
+                        foundMatch = true;
+                        break;
+                    }
+                }
+            } catch (error) {
+                // Continue to next spine item
+            }
+        }
+
+        if (!foundMatch) {
+            results.push({ cfi: null, searchText, error: 'Text not found' });
+        }
+    }
+
+    return results;
+}
+
+/**
  * Main CLI handler
  */
 async function main() {
     const args = process.argv.slice(2);
 
     if (args.length < 2) {
-        console.error('Usage: node epub-cfi-generator.js <epub_file> <search_text> [--output json] [--find-all]');
+        console.error('Usage: node epub-cfi-generator.js <epub_file> <search_text|batch_file> [--output json] [--find-all] [--batch]');
         console.error('');
         console.error('Options:');
         console.error('  --output json    Output results as JSON');
         console.error('  --find-all       Find all occurrences (default: first only)');
+        console.error('  --batch          Second argument is a JSON file with array of search texts');
         process.exit(1);
     }
 
     const epubPath = args[0];
-    const searchText = args[1];
+    const searchTextOrFile = args[1];
     const outputJson = args.includes('--output') && args[args.indexOf('--output') + 1] === 'json';
     const findAll = args.includes('--find-all');
+    const batchMode = args.includes('--batch');
 
     try {
-        const result = await generateCFI(epubPath, searchText, { findAll });
-
-        if (!result) {
-            if (outputJson) {
-                console.log(JSON.stringify({ error: 'Text not found in EPUB' }));
-            } else {
-                console.error('Error: Text not found in EPUB');
-            }
-            process.exit(1);
-        }
-
-        if (outputJson) {
-            console.log(JSON.stringify(result, null, 2));
+        if (batchMode) {
+            // Batch mode: searchTextOrFile is JSON string with array of texts
+            const searchTexts = JSON.parse(searchTextOrFile);
+            const results = await generateCFIBatch(epubPath, searchTexts);
+            console.log(JSON.stringify(results));
         } else {
-            if (findAll) {
-                result.forEach((r, i) => {
-                    console.log(`Match ${i + 1}:`);
-                    console.log(`  CFI: ${r.cfi}`);
-                    console.log(`  Spine: ${r.spineIndex} (${r.spineId})`);
-                    console.log(`  Text: ${r.foundText}...`);
-                    console.log('');
-                });
+            // Single mode
+            const searchText = searchTextOrFile;
+            const result = await generateCFI(epubPath, searchText, { findAll });
+
+            if (!result) {
+                if (outputJson) {
+                    console.log(JSON.stringify({ error: 'Text not found in EPUB' }));
+                } else {
+                    console.error('Error: Text not found in EPUB');
+                }
+                process.exit(1);
+            }
+
+            if (outputJson) {
+                console.log(JSON.stringify(result, null, 2));
             } else {
-                console.log(result.cfi);
+                if (findAll) {
+                    result.forEach((r, i) => {
+                        console.log(`Match ${i + 1}:`);
+                        console.log(`  CFI: ${r.cfi}`);
+                        console.log(`  Spine: ${r.spineIndex} (${r.spineId})`);
+                        console.log(`  Text: ${r.foundText}...`);
+                        console.log('');
+                    });
+                } else {
+                    console.log(result.cfi);
+                }
             }
         }
     } catch (error) {
-        if (outputJson) {
+        if (outputJson || batchMode) {
             console.log(JSON.stringify({ error: error.message }));
         } else {
             console.error('Error:', error.message);
@@ -395,4 +476,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     });
 }
 
-export { generateCFI, findTextInDocument, normalizeText };
+export { generateCFI, generateCFIBatch, findTextInDocument, normalizeText };
