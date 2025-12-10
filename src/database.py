@@ -27,23 +27,6 @@ def generate_zotero_key() -> str:
     return "".join(random.choice("23456789ABCDEFGHJKLMNPQRSTUVWXYZ") for _ in range(8))
 
 
-def get_existing_keys(db_path: str) -> set[str]:
-    """Get all existing keys from the database to avoid collisions."""
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT key FROM items")
-        return {row[0] for row in cursor.fetchall()}
-
-
-def generate_unique_key(existing_keys: set[str]) -> str:
-    """Generate a unique key that doesn't exist in the database."""
-    while True:
-        key = generate_zotero_key()
-        if key not in existing_keys:
-            existing_keys.add(key)
-            return key
-
-
 def find_epub_in_database(db_path: str | Path, book_identifier: str) -> EPUBInfo | None:
     """
     Find the EPUB file and parent item ID in the Zotero database.
@@ -240,7 +223,6 @@ class AnnotationImporter:
         self.db_path = str(db_path)
         self.conn: sqlite3.Connection | None = None
         self.cursor: sqlite3.Cursor | None = None
-        self.existing_keys: set[str] = set()
         # Prepared statements cache
         self._check_duplicate_stmt = None
         self._insert_item_stmt = None
@@ -249,7 +231,6 @@ class AnnotationImporter:
     def __enter__(self):
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
-        self.existing_keys = get_existing_keys(self.db_path)
 
         # Pre-compile frequently used queries for better performance
         self._prepare_statements()
@@ -337,7 +318,7 @@ class AnnotationImporter:
                 logger.debug("  Duplicate detected, skipping")
                 return False
 
-            key = generate_unique_key(self.existing_keys)
+            key = generate_zotero_key()
 
             # Parse timestamp
             dt = datetime.strptime(annotation.timestamp, "%Y-%m-%d %H:%M")
