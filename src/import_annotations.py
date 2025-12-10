@@ -4,10 +4,10 @@ Core functionality for importing EPUB annotations into Zotero database.
 
 import logging
 from pathlib import Path
+import json
 
 from src.models import Annotation
 from src.cfi_generator_js import create_epub_cfi_batch_js
-from src.utils import create_position_json
 from src.database import create_database_backup, AnnotationImporter
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
@@ -49,7 +49,7 @@ def import_annotations_to_database(
 
             if cfi:
                 # Create position JSON from CFI
-                position_json = create_position_json(cfi)
+                position_json = _create_position_json(cfi)
 
                 # For sort index, we'll use a simple page-based approach
                 # since we no longer track spine index in Python
@@ -67,7 +67,7 @@ def import_annotations_to_database(
 
                 approx_spine = max(0, page_num // 10)
                 cfi = f"epubcfi(/6/{(approx_spine + 1) * 2}!/4/2:0)"
-                position_json = create_position_json(cfi)
+                position_json = _create_position_json(cfi)
                 sort_index = _create_sort_index_from_page(annotation.page)
 
                 logger.warning(
@@ -90,6 +90,20 @@ def import_annotations_to_database(
                 failed += 1
 
     return successful, skipped, failed
+
+
+def _create_position_json(cfi: str) -> str:
+    """
+    Create the position JSON for Zotero.
+
+    For EPUB annotations, Zotero uses FragmentSelector with CFI.
+    """
+    position = {
+        "type": "FragmentSelector",
+        "conformsTo": "http://www.idpf.org/epub/linking/cfi/epub-cfi.html",
+        "value": cfi,
+    }
+    return json.dumps(position)
 
 
 def _create_sort_index_from_page(page: str) -> str:

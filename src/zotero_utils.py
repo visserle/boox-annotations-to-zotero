@@ -1,6 +1,5 @@
 """Utility functions for annotation processing."""
 
-import json
 import platform
 import re
 from pathlib import Path
@@ -58,17 +57,3 @@ def get_zotero_storage_dir() -> Path:
 
     # Fall back to default storage location
     return get_zotero_data_dir() / "storage"
-
-
-def create_position_json(cfi: str) -> str:
-    """
-    Create the position JSON for Zotero.
-
-    For EPUB annotations, Zotero uses FragmentSelector with CFI.
-    """
-    position = {
-        "type": "FragmentSelector",
-        "conformsTo": "http://www.idpf.org/epub/linking/cfi/epub-cfi.html",
-        "value": cfi,
-    }
-    return json.dumps(position)
