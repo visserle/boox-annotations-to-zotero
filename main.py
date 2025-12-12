@@ -10,15 +10,15 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from src.config import ZOTERO_DATA_DIR, COLOR_MAP
-from src.log_config import configure_logging
-from src.text_processing import parse_annotation_file, extract_book_identifier
+from src.config import COLOR_MAP, ZOTERO_DATA_DIR
 from src.database import find_epub_in_database
-from src.utils import get_zotero_storage_dir
 from src.import_annotations import (
     import_annotations_to_database,
     print_import_summary,
 )
+from src.log_config import configure_logging
+from src.text_processing import extract_book_identifier, parse_annotation_file
+from src.zotero_utils import get_zotero_storage_dir
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 

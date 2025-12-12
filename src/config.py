@@ -2,7 +2,8 @@
 
 import warnings
 from pathlib import Path
-from src.utils import get_zotero_data_dir
+
+from src.zotero_utils import get_zotero_data_dir
 
 # Auto-detect Zotero data directory with fallback to default
 try:

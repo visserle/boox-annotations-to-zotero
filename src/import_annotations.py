@@ -2,13 +2,13 @@
 Core functionality for importing EPUB annotations into Zotero database.
 """
 
+import json
 import logging
 from pathlib import Path
-import json
 
-from src.models import Annotation
 from src.cfi_generator_js import create_epub_cfi_batch_js
-from src.database import create_database_backup, AnnotationImporter
+from src.database import AnnotationImporter, create_database_backup
+from src.models import Annotation
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
@@ -32,9 +32,19 @@ def import_annotations_to_database(
     backup_path = create_database_backup(db_path)
     logger.debug(f"Database backup created at: {backup_path}")
 
+    # Sort annotations by page number to ensure sequential processing
+    # This helps disambiguate duplicate text by searching from the last match position
+    sorted_annotations = sorted(
+        annotations, key=lambda a: int(a.page) if a.page.isdigit() else 0
+    )
+    logger.debug(
+        f"Sorted annotations by page: {[a.page for a in sorted_annotations[:5]]}"
+        + ("..." if len(sorted_annotations) > 5 else "")
+    )
+
     # Generate all CFIs in batch (much faster than individual calls)
     logger.debug("Generating CFIs in batch mode...")
-    search_texts = [annotation.text for annotation in annotations]
+    search_texts = [annotation.text for annotation in sorted_annotations]
     cfis = create_epub_cfi_batch_js(epub_path, search_texts)
 
     successful = 0
@@ -42,7 +52,7 @@ def import_annotations_to_database(
     failed = 0
 
     with AnnotationImporter(db_path) as importer:
-        for idx, (annotation, cfi) in enumerate(zip(annotations, cfis), 1):
+        for idx, (annotation, cfi) in enumerate(zip(sorted_annotations, cfis), 1):
             logger.debug(
                 f"[{idx}/{len(annotations)}] Processing page {annotation.page}"
             )

@@ -2,7 +2,8 @@
 
 import time
 from pathlib import Path
-from src.cfi_generator_js import create_epub_cfi_js, create_epub_cfi_batch_js
+
+from src.cfi_generator_js import create_epub_cfi_batch_js, create_epub_cfi_js
 
 # Test file
 EPUB_PATH = (

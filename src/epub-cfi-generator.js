@@ -82,9 +82,10 @@ function normalizeText(text) {
  * @param {Document} doc - The DOM document to search in
  * @param {string} searchText - The text to search for
  * @param {boolean} useFuzzyMatch - If true, ignores whitespace differences
+ * @param {number} skipChars - Number of characters to skip from the start (for finding later occurrences)
  * @returns {Range|null} DOM Range object or null if not found
  */
-function findTextInDocument(doc, searchText, useFuzzyMatch = false) {
+function findTextInDocument(doc, searchText, useFuzzyMatch = false, skipChars = 0) {
     const normalizedSearch = normalizeText(searchText);
     const walker = doc.createTreeWalker(
         doc.body || doc.documentElement,
@@ -125,7 +126,8 @@ function findTextInDocument(doc, searchText, useFuzzyMatch = false) {
         // Try exact match first (case-insensitive)
         const searchLower = accumulatedText.toLowerCase();
         const normalizedSearchLower = normalizedSearch.toLowerCase();
-        searchStartPos = searchLower.indexOf(normalizedSearchLower);
+        // Start searching from skipChars position to find later occurrences
+        searchStartPos = searchLower.indexOf(normalizedSearchLower, skipChars);
         if (searchStartPos !== -1) {
             searchEndPos = searchStartPos + normalizedSearch.length;
         }
@@ -135,7 +137,15 @@ function findTextInDocument(doc, searchText, useFuzzyMatch = false) {
         const textNoSpaces = accumulatedText.replace(/\s+/g, '').toLowerCase();
         const searchNoSpaces = normalizedSearch.replace(/\s+/g, '').toLowerCase();
 
-        const fuzzyPosNoSpaces = textNoSpaces.indexOf(searchNoSpaces);
+        // Map skipChars to position in no-spaces text
+        let skipNoSpaces = 0;
+        for (let i = 0; i < Math.min(skipChars, accumulatedText.length); i++) {
+            if (!/\s/.test(accumulatedText[i])) {
+                skipNoSpaces++;
+            }
+        }
+
+        const fuzzyPosNoSpaces = textNoSpaces.indexOf(searchNoSpaces, skipNoSpaces);
 
         if (fuzzyPosNoSpaces !== -1) {
             // Map position in whitespace-stripped text back to original text
@@ -338,12 +348,16 @@ async function generateCFIBatch(epubPath, searchTexts, options = {}) {
     const { zip, spine } = await parseEpub(epubPath);
     const results = [];
 
+    // Track last match position to handle duplicate text
+    let lastSpineIndex = 0;
+    let lastTextOffset = 0;
+
     // Search for each text
     for (const searchText of searchTexts) {
         let foundMatch = false;
 
-        // Search through all spine items
-        for (let i = 0; i < spine.length; i++) {
+        // Search through all spine items, starting from last match position
+        for (let i = lastSpineIndex; i < spine.length; i++) {
             const spineItem = spine[i];
 
             try {
@@ -372,9 +386,12 @@ async function generateCFIBatch(epubPath, searchTexts, options = {}) {
                     normalizedBodyText.replace(/\s+/g, '').toLowerCase().includes(normalizedSearch.replace(/\s+/g, '').toLowerCase());
 
                 if (exactMatch || fuzzyMatch) {
-                    let range = exactMatch ? findTextInDocument(doc, searchText, false) : null;
+                    // Calculate skip offset: skip all text from previous spine items plus offset in current item
+                    const skipChars = (i === lastSpineIndex) ? lastTextOffset : 0;
+
+                    let range = exactMatch ? findTextInDocument(doc, searchText, false, skipChars) : null;
                     if (!range) {
-                        range = findTextInDocument(doc, searchText, true);
+                        range = findTextInDocument(doc, searchText, true, skipChars);
                     }
 
                     if (range) {
@@ -384,6 +401,16 @@ async function generateCFIBatch(epubPath, searchTexts, options = {}) {
 
                         results.push({ cfi: cfiString, searchText });
                         foundMatch = true;
+
+                        // Update last match position for next search
+                        lastSpineIndex = i;
+                        // Get the end position of this match in the document text
+                        const docText = normalizeText(bodyText);
+                        const matchPos = docText.toLowerCase().indexOf(normalizeText(searchText).toLowerCase(), skipChars);
+                        if (matchPos !== -1) {
+                            lastTextOffset = matchPos + normalizeText(searchText).length;
+                        }
+
                         break;
                     }
                 }
@@ -394,6 +421,7 @@ async function generateCFIBatch(epubPath, searchTexts, options = {}) {
 
         if (!foundMatch) {
             results.push({ cfi: null, searchText, error: 'Text not found' });
+            // Don't update position tracking if we didn't find a match
         }
     }
 

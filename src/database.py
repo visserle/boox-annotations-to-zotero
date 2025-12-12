@@ -2,17 +2,13 @@
 
 import logging
 import random
-import sqlite3
 import shutil
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from src.config import ANNOTATION_ITEM_TYPE_ID, HIGHLIGHT_TYPE, LIBRARY_ID
 from src.models import Annotation, EPUBInfo
-from src.config import (
-    LIBRARY_ID,
-    ANNOTATION_ITEM_TYPE_ID,
-    HIGHLIGHT_TYPE,
-)
 
 logger = logging.getLogger(__name__.rsplit(".", maxsplit=1)[-1])
 
