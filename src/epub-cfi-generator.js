@@ -404,12 +404,27 @@ async function generateCFIBatch(epubPath, searchTexts, options = {}) {
 
                         // Update last match position for next search
                         lastSpineIndex = i;
-                        // Get the end position of this match in the document text
-                        const docText = normalizeText(bodyText);
-                        const matchPos = docText.toLowerCase().indexOf(normalizeText(searchText).toLowerCase(), skipChars);
-                        if (matchPos !== -1) {
-                            lastTextOffset = matchPos + normalizeText(searchText).length;
+                        // Calculate end position based on the actual Range object
+                        // We need to walk through the text nodes to find the actual character offset
+                        const walker = doc.createTreeWalker(
+                            doc.body || doc.documentElement,
+                            4, // NodeFilter.SHOW_TEXT
+                            null
+                        );
+                        
+                        let offset = 0;
+                        let node;
+                        while ((node = walker.nextNode())) {
+                            if (node === range.endContainer) {
+                                // Found the end container - add the offset within this node
+                                offset += range.endOffset;
+                                break;
+                            } else {
+                                // Add the full length of this text node
+                                offset += node.textContent.length;
+                            }
                         }
+                        lastTextOffset = offset;
 
                         break;
                     }
