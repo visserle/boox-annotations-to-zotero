@@ -404,27 +404,46 @@ async function generateCFIBatch(epubPath, searchTexts, options = {}) {
 
                         // Update last match position for next search
                         lastSpineIndex = i;
-                        // Calculate end position based on the actual Range object
-                        // We need to walk through the text nodes to find the actual character offset
+
+                        // Calculate end position in normalized text space
+                        // This must match the accumulated text in findTextInDocument
                         const walker = doc.createTreeWalker(
                             doc.body || doc.documentElement,
                             4, // NodeFilter.SHOW_TEXT
                             null
                         );
-                        
-                        let offset = 0;
+
+                        let accumulatedText = '';
                         let node;
+                        let foundEnd = false;
+
                         while ((node = walker.nextNode())) {
+                            const nodeText = node.textContent;
+                            if (nodeText.trim().length === 0) continue;
+
+                            const normalizedNodeText = normalizeText(nodeText);
+
                             if (node === range.endContainer) {
-                                // Found the end container - add the offset within this node
-                                offset += range.endOffset;
+                                // Found the end container - add partial text up to endOffset
+                                // Map the endOffset in original text to normalized text
+                                const partialOriginal = nodeText.substring(0, range.endOffset);
+                                const partialNormalized = normalizeText(partialOriginal);
+                                if (accumulatedText.length > 0) {
+                                    accumulatedText += ' ';
+                                }
+                                accumulatedText += partialNormalized;
+                                foundEnd = true;
                                 break;
                             } else {
-                                // Add the full length of this text node
-                                offset += node.textContent.length;
+                                // Add the full normalized text of this node
+                                if (accumulatedText.length > 0) {
+                                    accumulatedText += ' ';
+                                }
+                                accumulatedText += normalizedNodeText;
                             }
                         }
-                        lastTextOffset = offset;
+
+                        lastTextOffset = accumulatedText.length;
 
                         break;
                     }
