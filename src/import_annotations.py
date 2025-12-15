@@ -83,7 +83,8 @@ def import_annotations_to_database(
                 logger.warning(
                     f"[{idx}/{len(annotations)}] Text not found in EPUB, using fallback CFI (page {annotation.page})"
                 )
-                logger.debug(f"  Search text: {annotation.text[:50]}...")
+                # logger.debug(f"  Search text: {annotation.text[:50]}...")
+                logger.debug(f"  Search text:\n{annotation.text}")
 
             # Insert annotation
             result = importer.insert_annotation(

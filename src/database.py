@@ -227,10 +227,6 @@ class AnnotationImporter:
     def __enter__(self):
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
-
-        # Pre-compile frequently used queries for better performance
-        self._prepare_statements()
-
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -240,12 +236,6 @@ class AnnotationImporter:
             else:
                 self.conn.rollback()
             self.conn.close()
-
-    def _prepare_statements(self):
-        """Pre-compile SQL statements for reuse."""
-        # These are prepared as strings since sqlite3 doesn't have true prepared statements
-        # but calling execute with the same SQL string allows SQLite to reuse query plans
-        pass
 
     def annotation_exists(self, annotation: Annotation, parent_item_id: int) -> bool:
         """
