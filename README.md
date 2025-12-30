@@ -37,13 +37,13 @@ Tested with Zotero 7.0.30 on an M2 MacBook Air and NeoReader 38133 on a Boox Pag
 4. **Close Zotero.**
 
 5. **Run the import:**
- Make sure sure that the EPUB file is available in Zotero and that the first line of the Boox annotation .txt states the author and title in the << >> brackets (see `/examples`). Zotero's path and database is automatically detected, but can be overridden with: `--zotero-dir /path/to/zotero`. The script creates a backup of your Zotero database before making any changes under the name `zotero.sqlite.pre-import-backup`.
+ Make sure that the EPUB file is available in Zotero and that the first line of the Boox annotation .txt states the author and title in the << >> brackets (see `/examples`). Zotero's path and database is automatically detected, but can be overridden with: `--zotero-dir /path/to/zotero`. The script creates a backup of your Zotero database before making any changes under the name `zotero.sqlite.pre-import-backup`.
 
    ```bash
    python -m main path/to/annotations.txt
    ```
 
-1. **Restart Zotero** to see your imported annotations. If the text is not found in EPUB, the annotation will be imported, but without a CFI. It will still be visible in Zotero, but not linked to a specific location in the EPUB.
+6. **Restart Zotero** to see your imported annotations. If the text is not found in EPUB, the annotation will be imported, but without a CFI. It will still be visible in Zotero, but not linked to a specific location in the EPUB.
 
 ## Limitations
 
